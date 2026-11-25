@@ -1,0 +1,52 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Cover</title>
+<style>
+  body{margin:0;background:var(--surface-000)}
+  .cv{position:relative;width:960px;height:288px;overflow:hidden;background:var(--surface-000)}
+  .cv svg{position:absolute;inset:0}
+  .b-yellow{fill:var(--solari-yellow)}
+  .b-ink{fill:var(--ink)}
+  .b-raised{fill:var(--surface-200)}
+  .flap{fill:var(--flap);rx:var(--radius-flap)}
+  .split{fill:var(--flap-split)}
+  .cv-text{position:absolute;left:40px;bottom:40px;max-width:440px}
+  .cv-name{margin:0;font-family:var(--font-flap);font-size:120px;line-height:.92;font-weight:700;letter-spacing:.02em;color:var(--ink)}
+  .cv-tag{margin:12px 0 0;font-family:var(--font-sans);font-size:14px;line-height:20px;color:var(--ink-muted)}
+</style>
+</head>
+<body>
+<div class="cv">
+  <!--
+    blocks: solari-yellow 440×208 (bleeds top + right), ink 112×72, surface-200 320×72 — the signal, the information, the concourse
+    arrangement: one wide yellow slab across the top right with two strips under it, all right of x=520
+    pattern: a literal motif row — blank flap cards (flap, radius-flap) split by flap-split, two rows of five on the yellow,
+             because the README's whole identity is the split-flap card
+    steps & radii: card 48×72 = 2×flap-md; gaps space-3 (12px) and space-4 (16px); radius-flap 3px
+  -->
+  <svg viewBox="0 0 960 288" width="960" height="288" aria-hidden="true">
+    <rect class="b-yellow" x="520" y="0" width="440" height="208"/>
+    <rect class="b-ink" x="520" y="216" width="112" height="72"/>
+    <rect class="b-raised" x="640" y="216" width="320" height="72"/>
+    <g>
+      <rect class="flap" x="584" y="28" width="48" height="72"/><rect class="split" x="584" y="63" width="48" height="2"/>
+      <rect class="flap" x="644" y="28" width="48" height="72"/><rect class="split" x="644" y="63" width="48" height="2"/>
+      <rect class="flap" x="704" y="28" width="48" height="72"/><rect class="split" x="704" y="63" width="48" height="2"/>
+      <rect class="flap" x="764" y="28" width="48" height="72"/><rect class="split" x="764" y="63" width="48" height="2"/>
+      <rect class="flap" x="824" y="28" width="48" height="72"/><rect class="split" x="824" y="63" width="48" height="2"/>
+      <rect class="flap" x="584" y="112" width="48" height="72"/><rect class="split" x="584" y="147" width="48" height="2"/>
+      <rect class="flap" x="644" y="112" width="48" height="72"/><rect class="split" x="644" y="147" width="48" height="2"/>
+      <rect class="flap" x="704" y="112" width="48" height="72"/><rect class="split" x="704" y="147" width="48" height="2"/>
+      <rect class="flap" x="764" y="112" width="48" height="72"/><rect class="split" x="764" y="147" width="48" height="2"/>
+      <rect class="flap" x="824" y="112" width="48" height="72"/><rect class="split" x="824" y="147" width="48" height="2"/>
+      <rect class="flap" x="884" y="112" width="48" height="72"/><rect class="split" x="884" y="147" width="48" height="2"/>
+    </g>
+  </svg>
+  <div class="cv-text">
+    <h1 class="cv-name">SOLARI</h1>
+    <p class="cv-tag">A website that reads like the departures board — one flap at a time.</p>
+  </div>
+</div>
+</body>
+</html>
