@@ -96,10 +96,31 @@ SOLARI is a website system modelled on the split-flap departures board — the c
 | `components/index.d.ts` | TypeScript declarations |
 | `components/<Name>/` | Each component's guidelines and preview; `Homepage/` is the website theme |
 | `tools/build_pages.py` | Builds the GitHub Pages site into `docs/` — rerun after changing anything above |
+| `experiments/engine/solari-board.js` | The canvas flap engine shared by the board experiment and the blog |
 | `experiments/board/` | The full-page board experiment: the entire site is one split-flap board drawn on a single canvas |
+| `blog/` | The board blog: `index.html` (the app) and `posts/*.md` |
+| `tools/build_blog.py` | Builds `docs/blog/`: posts.json, the RSS feed and a plain-text page per post |
 | `docs/` | The published site: the theme at the root, the component gallery at `/system/` |
 | `vendor/` | React 18.3.1 UMD builds used by the site (MIT) |
 
 - Live theme: https://adivers.github.io/solari/
 - Component gallery: https://adivers.github.io/solari/system/
 - Experiment — the whole page is one board: https://adivers.github.io/solari/board/ (source: `experiments/board/index.html`; one canvas, no React)
+- The board blog (SOLARI Journal): https://adivers.github.io/solari/blog/ · RSS: https://adivers.github.io/solari/blog/feed.xml
+
+## Writing a post
+
+Add a Markdown file to `blog/posts/` and run `python3 tools/build_pages.py`:
+
+```markdown
+---
+title: My new post
+date: 2026-12-01
+tags: design, notes
+summary: One sentence that appears on the board and in the feed.
+---
+
+Paragraphs, `## headings`, `> quotes` and `- lists` all work.
+```
+
+Set `status: arriving` to list a post under Arrivals (with its expected date) before it is written. The filename is the post's address.

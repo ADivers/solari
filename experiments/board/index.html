@@ -23,27 +23,12 @@
 <nav class="sr" aria-label="Board pages" id="nav"></nav>
 <main class="sr" id="page" aria-live="polite"></main>
 <canvas id="board" aria-hidden="true"></canvas>
+<script src="../engine/solari-board.js"></script>
 <script>
 (function () {
   "use strict";
-  var DRUM = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,:-/'&!?+#%()>";
-  var SPEED = 60;            // ms per flip
-  var STAGGER_COL = 9;       // ms per column, left to right
-  var STAGGER_ROW = 22;      // ms per row, top to bottom
-  var REDUCED = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var B = window.SolariBoard, pad = B.pad, padL = B.padL;
 
-  var css = getComputedStyle(document.documentElement);
-  function tok(n, d) { return (css.getPropertyValue("--" + n) || "").trim() || d; }
-  var C = {
-    housing: tok("housing", "#0a0a09"), flap: tok("flap", "#1f1f1d"), split: tok("flap-split", "#050505"),
-    w: tok("flap-ink", "#f2efe6"), y: tok("solari-yellow", "#f5c400"), m: tok("board-muted", "#9c998f"),
-    alert: tok("flap-alert", "#b3261e"), onY: tok("on-yellow", "#141413")
-  };
-
-  /* ---------------------------------------------------------------- pages */
-  // Each page is a list of lines. A line is either a string (wrapped, white) or
-  // {t: text, c: 'w'|'y'|'m'|'r'|'Y', go: '#page', wrap: bool, align: 'left'|'right'|'center'}.
-  // c: w white, y yellow, m muted, r white on red flap, Y black on yellow flap.
   var TIMETABLE = [
     ["09:42", "GENEVA", "LAUSANNE", "4"], ["09:55", "MILANO", "BRIG", "11"], ["10:08", "ZURICH HB", "BERN", "7"],
     ["10:20", "PARIS", "DIJON", "2"], ["10:31", "VENEZIA", "VERONA", "9"], ["10:47", "MUNCHEN", "LINDAU", "5"],
@@ -51,336 +36,109 @@
     ["11:40", "BASEL SBB", "OLTEN", "12"], ["11:56", "FIRENZE", "BOLOGNA", "1"], ["12:10", "LJUBLJANA", "VILLACH", "10"]
   ];
   var REMARKS = [["ON TIME", "w"], ["ON TIME", "w"], ["DELAY 5", "y"], ["ON TIME", "w"], ["BOARDING", "Y"], ["ON TIME", "w"], ["DELAY 10", "y"], ["CANCELLED", "r"], ["ON TIME", "w"]];
-  var tick = 0;
+  var NAV = [["HOME", "#home"], ["DEPARTURES", "#departures"], ["ABOUT", "#about"], ["CONTACT", "#contact"]];
+  var tick = 0, route = "home";
 
+  // Each page writes onto a Grid g: g.para(text, colour), g.line(text, colour, link), g.blank()
   var PAGES = {
-    home: { title: "Home", lines: function (cols) { return [
-      "",
-      { t: "EVERY MESSAGE,", c: "y" },
-      { t: "ONE FLAP AT A TIME.", c: "y" },
-      "",
-      "THIS WHOLE PAGE IS ONE SPLIT-FLAP BOARD. THERE IS NO OTHER TEXT, NO IMAGES AND NO SCROLLING CONTENT - ONLY FLAPS.",
-      "",
-      "PICK A DESTINATION AND THE BOARD WILL FLIP TO IT.",
-      "",
-      { t: "> DEPARTURES", c: "y", go: "#departures" },
-      { t: "> HOW IT WORKS", c: "y", go: "#about" },
-      { t: "> CONTACT", c: "y", go: "#contact" }
-    ]; } },
-    departures: { title: "Departures", lines: function (cols, rows) {
-      var wide = cols >= 40, dest = wide ? 10 : Math.max(6, cols - 5 - 1 - 1 - 2 - (cols >= 30 ? 9 : 0) - 1);
+    home: { title: "Home", draw: function (g) {
+      g.blank(); g.line("EVERY MESSAGE,", "y"); g.line("ONE FLAP AT A TIME.", "y"); g.blank();
+      g.para("THIS WHOLE PAGE IS ONE SPLIT-FLAP BOARD. THERE IS NO OTHER TEXT, NO IMAGES AND NO SCROLLING CONTENT - ONLY FLAPS.");
+      g.blank(); g.para("PICK A DESTINATION AND THE BOARD WILL FLIP TO IT."); g.blank();
+      g.line("> DEPARTURES", "y", "#departures"); g.line("> HOW IT WORKS", "y", "#about"); g.line("> CONTACT", "y", "#contact");
+      g.line("> THE BOARD BLOG", "y", "../blog/");
+    } },
+    departures: { title: "Departures", draw: function (g, cols, fit) {
+      var dest = cols >= 40 ? 10 : Math.max(6, cols - 5 - 1 - 1 - 2 - (cols >= 30 ? 9 : 0) - 1);
       var showRem = cols >= 30, showVia = cols >= 48;
       function base(t, d, v, p) { return pad(t, 5) + " " + pad(d, dest) + " " + (showVia ? pad(v, 9) + " " : "") + padL(p, 2); }
-      function row(t, d, v, p, r) { return showRem ? base(t, d, v, p) + " " + pad(r, 9) : base(t, d, v, p); }
-      var out = ["", { t: "DEPARTURES  PARTENZE", c: "y" }, "",
-        { t: row("TIME", "DESTINATION", "VIA", "PL", "REMARKS"), c: "m", wrap: false }];
-      var n = Math.max(4, Math.min(TIMETABLE.length, rows - 10));
+      g.blank(); g.line("DEPARTURES  PARTENZE", "y"); g.blank();
+      var hr = g.blank(), x = g.put(hr, 0, base("TIME", "DESTINATION", "VIA", "PL"), "m");
+      if (showRem) g.put(hr, x + 1, "REMARKS", "m");
+      var n = Math.max(4, Math.min(TIMETABLE.length, fit - 10));
       for (var i = 0; i < n; i++) {
         var t = TIMETABLE[(tick + i) % TIMETABLE.length];
         var rem = i === 0 ? ["BOARDING", "Y"] : REMARKS[(tick * 2 + i * 3) % REMARKS.length];
-        out.push({ spans: [{ t: base(t[0], t[1], t[2], t[3]), c: "w" }].concat(showRem ? [{ t: pad(rem[0], 9), c: rem[1] }] : []), wrap: false });
+        var r = g.blank(), x2 = g.put(r, 0, base(t[0], t[1], t[2], t[3]), "w");
+        if (showRem) g.put(r, x2 + 1, pad(rem[0], 9), rem[1]);
       }
-      out.push("", { t: "> HOME", c: "y", go: "#home" });
-      return out;
+      g.blank(); g.line("> HOME", "y", "#home");
+    }, text: function () { return ["DEPARTURES"].concat(TIMETABLE.slice(0, 8).map(function (t) { return t[0] + " " + t[1] + " via " + t[2] + ", platform " + t[3]; })); } },
+    about: { title: "How it works", draw: function (g) {
+      g.blank(); g.line("HOW IT WORKS", "y"); g.blank();
+      g.para("EVERY CELL IS A CARD ON A DRUM. A CELL ONLY EVER FLIPS FORWARD - SPACE, A TO Z, 0 TO 9, PUNCTUATION - UNTIL IT LANDS.");
+      g.blank(); g.para("WHEN YOU CHANGE PAGE, ONLY THE CELLS WHOSE LETTERS CHANGE WILL MOVE. THE WAVE RUNS LEFT TO RIGHT, TOP TO BOTTOM.");
+      g.blank(); g.para("THE WHOLE BOARD IS ONE CANVAS, REDRAWN ONLY WHERE A FLAP IS MOVING. A SCREEN READER GETS THE SAME WORDS AS REAL TEXT.");
+      g.blank(); g.line("> HOME", "y", "#home"); g.line("> DEPARTURES", "y", "#departures");
     } },
-    about: { title: "How it works", lines: function () { return [
-      "",
-      { t: "HOW IT WORKS", c: "y" },
-      "",
-      "EVERY CELL IS A CARD ON A DRUM. A CELL ONLY EVER FLIPS FORWARD - SPACE, A TO Z, 0 TO 9, PUNCTUATION - UNTIL IT LANDS.",
-      "",
-      "WHEN YOU CHANGE PAGE, ONLY THE CELLS WHOSE LETTERS CHANGE WILL MOVE. THE WAVE RUNS LEFT TO RIGHT, TOP TO BOTTOM.",
-      "",
-      "THE WHOLE BOARD IS ONE CANVAS, REDRAWN ONLY WHERE A FLAP IS MOVING. A SCREEN READER GETS THE SAME WORDS AS REAL TEXT.",
-      "",
-      { t: "> HOME", c: "y", go: "#home" },
-      { t: "> DEPARTURES", c: "y", go: "#departures" }
-    ]; } },
-    contact: { title: "Contact", lines: function () { return [
-      "",
-      { t: "CONTACT", c: "y" },
-      "",
-      { t: "INFORMATION DESK", c: "m" },
-      "PLATFORM 1, MAIN CONCOURSE",
-      "",
-      { t: "OPEN", c: "m" },
-      "DAILY 05:30 - 23:45",
-      "",
-      { t: "SOURCE", c: "m" },
-      { t: "GITHUB.COM/ADIVERS/SOLARI", c: "y", go: "https://github.com/ADivers/solari" },
-      "",
-      { t: "> HOME", c: "y", go: "#home" }
-    ]; } }
+    contact: { title: "Contact", draw: function (g) {
+      g.blank(); g.line("CONTACT", "y"); g.blank();
+      g.line("INFORMATION DESK", "m"); g.para("PLATFORM 1, MAIN CONCOURSE"); g.blank();
+      g.line("OPEN", "m"); g.line("DAILY 05:30 - 23:45"); g.blank();
+      g.line("SOURCE", "m"); g.line("GITHUB.COM/ADIVERS/SOLARI", "y", "https://github.com/ADivers/solari"); g.blank();
+      g.line("> HOME", "y", "#home");
+    } }
   };
-  var NAV = [["HOME", "#home"], ["DEPARTURES", "#departures"], ["ABOUT", "#about"], ["CONTACT", "#contact"]];
 
-  function pad(s, n) { s = String(s); return s.length >= n ? s.slice(0, n) : s + Array(n - s.length + 1).join(" "); }
-  function padL(s, n) { s = String(s); return s.length >= n ? s.slice(-n) : Array(n - s.length + 1).join(" ") + s; }
-  function norm(ch) { ch = (ch || " ").toUpperCase(); return DRUM.indexOf(ch) < 0 ? " " : ch; }
-  function wrap(text, width) {
-    var words = text.split(" "), lines = [], cur = "";
-    words.forEach(function (w) {
-      while (w.length > width) { if (cur) { lines.push(cur); cur = ""; } lines.push(w.slice(0, width)); w = w.slice(width); }
-      if (!cur) cur = w; else if ((cur + " " + w).length <= width) cur += " " + w; else { lines.push(cur); cur = w; }
-    });
-    if (cur || !lines.length) lines.push(cur);
-    return lines;
-  }
-
-  /* ---------------------------------------------------------------- grid */
-  var canvas = document.getElementById("board"), ctx = canvas.getContext("2d");
-  var dpr = 1, cols = 0, rows = 0, cw = 0, ch = 0, gap = 0, padX = 0, padY = 0;
-  var cells = [];     // {cur, curC, tgt, tgtC, from, fromC, start, delay}
-  var links = [];     // {row, c0, c1, go}
-  var hover = null, route = "home", bodyRows = 0;
-
-  function measure() {
-    var W = window.innerWidth, H = window.innerHeight;
-    var want = W < 520 ? 22 : W < 820 ? 32 : W < 1200 ? 44 : 54;
-    gap = Math.max(2, Math.round(W / 420));
-    padX = Math.max(10, Math.round(W * 0.02));
-    cw = Math.floor((W - padX * 2 - gap * (want - 1)) / want);
-    ch = Math.round(cw / 0.68);
-    cols = Math.floor((W - padX * 2 + gap) / (cw + gap));
-    padX = Math.floor((W - (cols * cw + (cols - 1) * gap)) / 2);
-    padY = padX;
-    var fitRows = Math.floor((H - padY * 2 + gap) / (ch + gap));
-    return fitRows;
-  }
-
-  function compose(name) {
-    // Build the target grid for a page: header (brand + nav), body, footer.
-    var page = PAGES[name] || PAGES.home;
-    var out = [], lk = [];
-    function blank() { var r = []; for (var i = 0; i < cols; i++) r.push([" ", "w"]); return r; }
-    function put(r, c0, text, color, go) {
-      for (var i = 0; i < text.length && c0 + i < cols; i++) out[r][c0 + i] = [norm(text[i]), color];
-      if (go) lk.push({ row: r, c0: c0, c1: Math.min(cols, c0 + text.length) - 1, go: go });
-    }
-    // header
-    var header = [blank()];
-    out = header;
-    put(0, 0, "SOLARI", "Y");
-    var navRow = 0, x;
-    var navWidth = NAV.reduce(function (a, n) { return a + n[0].length + 1; }, 0) - 1;
-    if (cols - 7 >= navWidth) { x = cols - navWidth; }
-    else { out.push(blank()); navRow = 1; x = 0; }
-    NAV.forEach(function (n) {
-      if (x + n[0].length > cols) { out.push(blank()); navRow += 1; x = 0; }   // wrap the nav on narrow boards
-      var active = n[1] === "#" + name;
-      put(navRow, x, n[0], active ? "y" : "m", n[1]);
-      x += n[0].length + 1;
-    });
-    // body
-    var body = page.lines(cols, measure._fit || 20), content = [];
-    body.forEach(function (ln) {
-      if (typeof ln === "string") ln = { t: ln };
-      if (ln.spans) { content.push({ spans: ln.spans }); return; }
-      var parts = ln.wrap === false ? [pad(ln.t, Math.min(cols, ln.t.length))] : wrap(ln.t, cols);
-      parts.forEach(function (p) { content.push({ t: p, c: ln.c || "w", go: ln.go }); });
-    });
-    content.forEach(function (ln) {
-      out.push(blank());
-      var r = out.length - 1;
-      if (ln.spans) { var c = 0; ln.spans.forEach(function (s) { put(r, c, s.t, s.c); c += s.t.length + 1; }); }
-      else put(r, 0, ln.t, ln.c, ln.go);
-    });
-    bodyRows = out.length;
-    return { grid: out, links: lk };
-  }
-
-  function layout(animate) {
-    var fit = measure(); measure._fit = fit;
-    var comp = compose(route);
-    rows = Math.max(fit, comp.grid.length + 2);
-    // footer: clock left, next-train ticker right on the last row
-    while (comp.grid.length < rows) { var r = []; for (var i = 0; i < cols; i++) r.push([" ", "w"]); comp.grid.push(r); }
-    var last = rows - 1, now = new Date();
-    var clock = two(now.getHours()) + ":" + two(now.getMinutes());
-    var t = TIMETABLE[tick % TIMETABLE.length];
-    var next = "NEXT " + t[0] + " " + t[1];
-    for (var k = 0; k < clock.length; k++) comp.grid[last][k] = [clock[k], "y"];
-    if (cols - 6 > next.length) for (k = 0; k < next.length; k++) comp.grid[last][cols - next.length + k] = [norm(next[k]), "m"];
-    links = comp.links;
-
-    var W = window.innerWidth, H = rows * ch + (rows - 1) * gap + padY * 2;
-    dpr = Math.min(2, window.devicePixelRatio || 1);
-    var sizeChanged = canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr) || cells.length !== rows * cols;
-    if (sizeChanged) {
-      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-      canvas.style.width = W + "px"; canvas.style.height = H + "px";
-      var old = cells; cells = [];
-      for (var i2 = 0; i2 < rows * cols; i2++) cells.push({ cur: " ", curC: "w", tgt: " ", tgtC: "w", from: " ", fromC: "w", start: 0, delay: 0 });
-      animate = animate && !old.length; // a resize lands instantly; first load flips in
-    }
-    var t0 = performance.now();
-    for (var r2 = 0; r2 < rows; r2++) for (var c2 = 0; c2 < cols; c2++) {
-      var cell = cells[r2 * cols + c2], g = comp.grid[r2][c2];
-      cell.tgt = g[0]; cell.tgtC = g[1];
-      if (!animate || REDUCED) { cell.cur = cell.tgt; cell.curC = cell.tgtC; cell.start = 0; continue; }
-      if (cell.cur !== cell.tgt || cell.curC !== cell.tgtC) {
-        if (!cell.start) { cell.delay = t0 + c2 * STAGGER_COL + r2 * STAGGER_ROW; }
-      }
-    }
-    writeText();
-    drawAll();
-    kick();
-  }
   function two(n) { return (n < 10 ? "0" : "") + n; }
-
-  /* ---------------------------------------------------------------- drawing */
-  var R = 3; // flap corner radius at 1x
-  function font() { return "600 " + Math.round(ch * 0.9) + 'px "Barlow Condensed", "Arial Narrow", sans-serif'; }
-  function face(c) { return c === "r" ? C.alert : c === "Y" ? C.y : C.flap; }
-  function ink(c) { return c === "y" ? C.y : c === "m" ? C.m : c === "Y" ? C.onY : C.w; }
-  function xy(i) { var r = Math.floor(i / cols), c = i % cols; return [padX + c * (cw + gap), padY + r * (ch + gap)]; }
-  function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-
-  // Draw one half (top or bottom) of a card showing `chr` in colour `col`, squashed by k toward the split.
-  function half(x, y, chr, col, top, k, shade) {
-    var mid = y + ch / 2;
-    ctx.save();
-    ctx.beginPath();
-    if (top) ctx.rect(x, y, cw, ch / 2); else ctx.rect(x, mid, cw, ch / 2);
-    ctx.clip();
-    if (k !== 1) { ctx.translate(0, mid); ctx.scale(1, k); ctx.translate(0, -mid); }
-    ctx.fillStyle = face(col); rr(x, y, cw, ch, Math.min(R, cw / 6)); ctx.fill();
-    if (chr !== " ") {
-      ctx.fillStyle = ink(col);
-      ctx.fillText(chr, x + cw / 2, mid + ch * 0.02);
-    }
-    if (shade) { ctx.fillStyle = "rgba(0,0,0," + shade + ")"; ctx.fillRect(x, y, cw, ch); }
-    ctx.restore();
+  function compose(cols, fit) {
+    var g = B.Grid(cols);
+    g.blank(); g.put(0, 0, "SOLARI", "Y");
+    var navW = NAV.reduce(function (a, n) { return a + n[0].length + 1; }, 0) - 1, row = 0, x;
+    if (cols - 7 >= navW) x = cols - navW; else { row = g.blank(); x = 0; }
+    NAV.forEach(function (n) {
+      if (x + n[0].length > cols) { row = g.blank(); x = 0; }
+      g.put(row, x, n[0], n[1] === "#" + route ? "y" : "m", n[1]); x += n[0].length + 1;
+    });
+    PAGES[route].draw(g, cols, fit);
+    var last = Math.max(fit, g.rows.length + 2) - 1, now = new Date(), t = TIMETABLE[tick % TIMETABLE.length];
+    g.put(last, 0, two(now.getHours()) + ":" + two(now.getMinutes()), "y");
+    var next = "NEXT " + t[0] + " " + t[1];
+    if (cols - 6 > next.length) g.put(last, cols - next.length, next, "m");
+    return g.out();
   }
 
-  function drawCell(i, now) {
-    var p = xy(i), x = p[0], y = p[1], cell = cells[i];
-    ctx.fillStyle = C.housing; ctx.fillRect(x - gap / 2, y - gap / 2, cw + gap, ch + gap);
-    var hot = hover && Math.floor(i / cols) === hover.row && i % cols >= hover.c0 && i % cols <= hover.c1;
-    var t = cell.start ? Math.min(1, (now - cell.start) / SPEED) : 1;
-    var curC = hot && cell.curC === "y" ? "w" : cell.curC, fromC = hot && cell.fromC === "y" ? "w" : cell.fromC;
-    if (t >= 1 || !cell.start) {
-      half(x, y, cell.cur, curC, true, 1, 0);
-      half(x, y, cell.cur, curC, false, 1, 0);
-    } else {
-      // static: next card's top half, previous card's bottom half
-      half(x, y, cell.cur, curC, true, 1, 0);
-      half(x, y, cell.from, fromC, false, 1, 0);
-      if (t < 0.5) half(x, y, cell.from, fromC, true, Math.cos(t * Math.PI), 0.45 * (t * 2));
-      else half(x, y, cell.cur, curC, false, -Math.cos(t * Math.PI), 0.35 * (1 - (t - 0.5) * 2));
-    }
-    // split line and hinge pins
-    ctx.fillStyle = C.split;
-    var sh = Math.max(1, Math.round(ch * 0.03));
-    ctx.fillRect(x, y + ch / 2 - sh / 2, cw, sh);
-    ctx.fillRect(x - 1, y + ch / 2 - ch * 0.06, Math.max(1, cw * 0.05), ch * 0.12);
-    ctx.fillRect(x + cw - Math.max(1, cw * 0.05) + 1, y + ch / 2 - ch * 0.06, Math.max(1, cw * 0.05), ch * 0.12);
-  }
-
-  function prep() {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.font = font(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  }
-  function drawAll() {
-    prep();
-    ctx.fillStyle = C.housing; ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-    var now = performance.now();
-    for (var i = 0; i < cells.length; i++) drawCell(i, now);
-  }
-
-  /* ---------------------------------------------------------------- engine */
-  var raf = 0;
-  function kick() { if (!raf) raf = requestAnimationFrame(frame); }
-  function frame(now) {
-    raf = 0; prep();
-    var busy = false;
-    for (var i = 0; i < cells.length; i++) {
-      var c = cells[i];
-      if (c.start) {
-        if (now - c.start < SPEED) { drawCell(i, now); busy = true; continue; }
-        c.start = 0; drawCell(i, now);
-      }
-      if (c.cur !== c.tgt || c.curC !== c.tgtC) {
-        busy = true;
-        if (now < c.delay) continue;
-        c.from = c.cur; c.fromC = c.curC;
-        if (c.cur !== c.tgt) c.cur = DRUM.charAt((DRUM.indexOf(c.cur) + 1) % DRUM.length);
-        if (c.cur === c.tgt) c.curC = c.tgtC;      // colour lands with the final card
-        c.start = now; c.delay = 0;
-        drawCell(i, now);
-      }
-    }
-    if (busy) kick();
-  }
-
-  /* ---------------------------------------------------------------- text + input */
   function writeText() {
     var nav = document.getElementById("nav"), page = document.getElementById("page");
-    nav.innerHTML = "";
+    nav.innerHTML = ""; page.innerHTML = "";
     NAV.forEach(function (n) {
       var a = document.createElement("a"); a.href = n[1]; a.textContent = n[0].charAt(0) + n[0].slice(1).toLowerCase();
-      if (n[1] === "#" + route) a.setAttribute("aria-current", "page");
-      nav.appendChild(a);
+      if (n[1] === "#" + route) a.setAttribute("aria-current", "page"); nav.appendChild(a);
     });
-    page.innerHTML = "";
-    var h = document.createElement("h1"); h.textContent = "SOLARI — " + (PAGES[route] || PAGES.home).title; page.appendChild(h);
-    var body = (PAGES[route] || PAGES.home).lines(cols, measure._fit || 20);
-    body.forEach(function (ln) {
-      if (typeof ln === "string") ln = { t: ln };
-      var text = ln.spans ? ln.spans.map(function (s) { return s.t.trim(); }).join(" ") : ln.t;
-      if (!text.trim()) return;
+    var h = document.createElement("h1"); h.textContent = "SOLARI - " + PAGES[route].title; page.appendChild(h);
+    var g = B.Grid(60); PAGES[route].draw(g, 60, 30);
+    var text = PAGES[route].text ? PAGES[route].text() : g.rows.map(function (r) { return r.map(function (c) { return c[0]; }).join("").trim(); });
+    var links = {}; g.links.forEach(function (l) { links[l.row] = l.go; });
+    text.forEach(function (t, i) {
+      if (!t) return;
       var el;
-      if (ln.go) { el = document.createElement("a"); el.href = ln.go; if (/^https?:/.test(ln.go)) el.rel = "noopener"; el.textContent = text.replace(/^> /, ""); }
-      else { el = document.createElement("p"); el.textContent = text; }
+      if (links[i]) { el = document.createElement("a"); el.href = links[i]; el.textContent = t.replace(/^> /, ""); }
+      else { el = document.createElement("p"); el.textContent = t; }
       page.appendChild(el);
     });
   }
 
-  function linkAt(ev) {
-    var rect = canvas.getBoundingClientRect(), x = ev.clientX - rect.left, y = ev.clientY - rect.top;
-    var c = Math.floor((x - padX + gap / 2) / (cw + gap)), r = Math.floor((y - padY + gap / 2) / (ch + gap));
-    for (var i = 0; i < links.length; i++) { var l = links[i]; if (l.row === r && c >= l.c0 && c <= l.c1) return l; }
-    return null;
-  }
-  function redrawLink(l) { if (!l) return; prep(); var now = performance.now(); for (var c = l.c0; c <= l.c1; c++) drawCell(l.row * cols + c, now); }
-  canvas.addEventListener("mousemove", function (ev) {
-    var l = linkAt(ev);
-    if (l !== hover) { var old = hover; hover = l; redrawLink(old); redrawLink(l); canvas.style.cursor = l ? "pointer" : "default"; }
+  var board = B(document.getElementById("board"), {
+    compose: compose,
+    onLink: function (l) { if (/^https?:/.test(l.go)) window.open(l.go, "_blank", "noopener"); else location.href = l.go; }
   });
-  canvas.addEventListener("mouseleave", function () { var old = hover; hover = null; redrawLink(old); });
-  canvas.addEventListener("click", function (ev) {
-    var l = linkAt(ev); if (!l) return;
-    if (/^https?:/.test(l.go)) window.open(l.go, "_blank", "noopener"); else location.hash = l.go;
-  });
-
   function go() {
     var r = (location.hash || "#home").slice(1);
     route = PAGES[r] ? r : "home";
-    document.title = "SOLARI — " + PAGES[route].title;
-    hover = null;
-    layout(true);
+    document.title = "SOLARI - " + PAGES[route].title;
+    writeText(); board.refresh(true);
   }
   window.addEventListener("hashchange", go);
-  var rt; window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(function () { layout(false); }, 120); });
-
-  // Live data: the timetable advances and the clock ticks; only changed flaps move.
-  setInterval(function () { tick++; layout(true); }, 12000);
+  setInterval(function () { tick++; board.refresh(true); }, 12000);
   var lastMin = new Date().getMinutes();
-  setInterval(function () { var m = new Date().getMinutes(); if (m !== lastMin) { lastMin = m; layout(true); } }, 1000);
+  setInterval(function () { var m = new Date().getMinutes(); if (m !== lastMin) { lastMin = m; board.refresh(true); } }, 1000);
 
   var ready = document.fonts && document.fonts.load ? document.fonts.load('600 40px "Barlow Condensed"') : Promise.resolve();
   Promise.race([ready, new Promise(function (r) { setTimeout(r, 1500); })]).then(function () {
-    // start blank, then flip the first page in
-    measure._fit = measure(); route = (PAGES[(location.hash || "#home").slice(1)] ? (location.hash || "#home").slice(1) : "home");
-    layout(false);
-    var keep = route; route = "__blank";
-    PAGES.__blank = { title: "", lines: function () { return []; } };
-    cells.forEach(function (c) { c.cur = " "; c.curC = "w"; });
-    drawAll();
-    route = keep; document.title = "SOLARI — " + PAGES[route].title;
-    layout(true);
+    var r = (location.hash || "#home").slice(1); route = PAGES[r] ? r : "home";
+    board.refresh(false); board.blank(); go();
   });
-  window.__board = { cells: function () { return cells; }, size: function () { return [cols, rows]; }, links: function () { return links; } };
+  window.__board = board;
 })();
 </script>
 </body>

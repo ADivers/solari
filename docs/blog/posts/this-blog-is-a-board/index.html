@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>This blog is a board — SOLARI Journal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The front page is a departures board, posts are trains, and reading one flips the board through it a screen at a time.">
+<link rel="alternate" type="application/rss+xml" title="SOLARI Journal" href="../../feed.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600&display=swap">
+<link rel="stylesheet" href="../../../tokens.css">
+<script>try{var t=localStorage.getItem('sl-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<style>
+  body{margin:0;background:var(--surface-000);color:var(--ink);font:18px/30px var(--font-sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:680px;margin:0 auto;padding:var(--space-8) var(--space-6) var(--space-16)}
+  .top{display:flex;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;font:500 12px/16px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;margin-bottom:var(--space-12)}
+  .top a{color:var(--ink-muted);text-decoration:none} .top a:hover{color:var(--ink)}
+  .brand{font:600 20px/1 var(--font-flap);letter-spacing:.06em;background:var(--solari-yellow);color:var(--on-yellow)!important;padding:4px 8px;border-radius:var(--radius-flap)}
+  .meta{font:500 12px/16px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted)}
+  h1{font:600 56px/56px var(--font-flap);letter-spacing:.01em;margin:var(--space-3) 0 var(--space-6);text-transform:uppercase}
+  h2{font:600 30px/34px var(--font-flap);letter-spacing:.02em;text-transform:uppercase;margin:var(--space-12) 0 var(--space-3);color:var(--yellow-text)}
+  h3{font-size:20px;line-height:28px;margin:var(--space-8) 0 var(--space-2)}
+  p,ul{margin:0 0 var(--space-6)}
+  .lede{color:var(--ink-muted);font-size:20px;line-height:32px}
+  blockquote{margin:var(--space-8) 0;padding:var(--space-4) var(--space-6);background:var(--housing);color:var(--flap-ink);border-radius:var(--radius-sm);font:600 26px/32px var(--font-flap);letter-spacing:.02em;text-transform:uppercase}
+  blockquote p{margin:0}
+  a{color:var(--yellow-text)}
+  a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  code{font:15px var(--font-mono);background:var(--surface-200);padding:1px 4px;border-radius:2px}
+  .foot{margin-top:var(--space-16);padding-top:var(--space-6);border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;font:500 12px/16px var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
+  .foot a{color:var(--ink-muted)}
+  @media (max-width:560px){h1{font-size:42px;line-height:44px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="top" aria-label="Journal"><a class="brand" href="../../">SOLARI</a><span><a href="../../#/post/this-blog-is-a-board/1">Read on the board</a> &nbsp;·&nbsp; <a href="../../">All posts</a></span></nav>
+  <article>
+    <div class="meta"><time datetime="2026-11-25">25 November 2026</time> · 2 min read · solari · meta</div>
+    <h1>This blog is a board</h1>
+    <p class="lede">The front page is a departures board, posts are trains, and reading one flips the board through it a screen at a time.</p>
+<p>Every blog has an index of posts. This one has a departures board.</p>
+<p>Each post is a train. The time column is the date it went out, the destination is the title, the platform is how many minutes it takes to read, and the remarks column tells you whether you have caught it yet: NEW in yellow until you open it, READ afterwards. Posts that are still being written sit under Arrivals with the date they are expected.</p>
+<h2>Reading on a board</h2>
+<p>Open a post and the whole board flips into it. A post is laid out at the width of your screen and cut into pages that fit the board. Use the arrow keys, swipe, or the PREV and NEXT flaps to turn the page - every turn is the same forward-only ripple as everything else.</p>
+<p>Switch on AUTO and the board reads itself to you: it holds each page for as long as it takes to read at an ordinary pace, then flips to the next.</p>
+<h2>The boring, important parts</h2>
+<ul><li>Posts are plain Markdown files in the repository, with a title, a date, tags and a one-line summary at the top.</li><li>Every post also has a text version: a normal web page you can read, search, copy from and share.</li><li>There is an RSS feed, because a blog without one is just a website.</li></ul>
+<blockquote><p>If you want to read something properly, read the text version. If you want to watch it arrive, stay on the board.</p></blockquote>
+  </article>
+  <div class="foot"><a href="../one-canvas/">&larr; One canvas, fifteen hundred flaps</a><span></span></div>
+</div>
+</body>
+</html>

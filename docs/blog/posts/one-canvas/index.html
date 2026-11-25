@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>One canvas, fifteen hundred flaps — SOLARI Journal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="How a page that is nothing but a departures board stays smooth - and still works for a screen reader and a keyboard.">
+<link rel="alternate" type="application/rss+xml" title="SOLARI Journal" href="../../feed.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600&display=swap">
+<link rel="stylesheet" href="../../../tokens.css">
+<script>try{var t=localStorage.getItem('sl-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<style>
+  body{margin:0;background:var(--surface-000);color:var(--ink);font:18px/30px var(--font-sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:680px;margin:0 auto;padding:var(--space-8) var(--space-6) var(--space-16)}
+  .top{display:flex;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;font:500 12px/16px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;margin-bottom:var(--space-12)}
+  .top a{color:var(--ink-muted);text-decoration:none} .top a:hover{color:var(--ink)}
+  .brand{font:600 20px/1 var(--font-flap);letter-spacing:.06em;background:var(--solari-yellow);color:var(--on-yellow)!important;padding:4px 8px;border-radius:var(--radius-flap)}
+  .meta{font:500 12px/16px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted)}
+  h1{font:600 56px/56px var(--font-flap);letter-spacing:.01em;margin:var(--space-3) 0 var(--space-6);text-transform:uppercase}
+  h2{font:600 30px/34px var(--font-flap);letter-spacing:.02em;text-transform:uppercase;margin:var(--space-12) 0 var(--space-3);color:var(--yellow-text)}
+  h3{font-size:20px;line-height:28px;margin:var(--space-8) 0 var(--space-2)}
+  p,ul{margin:0 0 var(--space-6)}
+  .lede{color:var(--ink-muted);font-size:20px;line-height:32px}
+  blockquote{margin:var(--space-8) 0;padding:var(--space-4) var(--space-6);background:var(--housing);color:var(--flap-ink);border-radius:var(--radius-sm);font:600 26px/32px var(--font-flap);letter-spacing:.02em;text-transform:uppercase}
+  blockquote p{margin:0}
+  a{color:var(--yellow-text)}
+  a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  code{font:15px var(--font-mono);background:var(--surface-200);padding:1px 4px;border-radius:2px}
+  .foot{margin-top:var(--space-16);padding-top:var(--space-6);border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;font:500 12px/16px var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
+  .foot a{color:var(--ink-muted)}
+  @media (max-width:560px){h1{font-size:42px;line-height:44px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="top" aria-label="Journal"><a class="brand" href="../../">SOLARI</a><span><a href="../../#/post/one-canvas/1">Read on the board</a> &nbsp;·&nbsp; <a href="../../">All posts</a></span></nav>
+  <article>
+    <div class="meta"><time datetime="2026-11-25">25 November 2026</time> · 2 min read · solari · performance</div>
+    <h1>One canvas, fifteen hundred flaps</h1>
+    <p class="lede">How a page that is nothing but a departures board stays smooth - and still works for a screen reader and a keyboard.</p>
+<p>The board experiment asks a slightly silly question: what if a website had no text, no images and no layout - only flaps? A laptop screen holds about fifty columns and twenty-odd rows of them. That is well over a thousand cells, any of which might be flipping at once.</p>
+<h2>Why not one element per flap</h2>
+<p>The SOLARI components draw each flap as a few nested elements with a CSS animation. That is lovely for a twelve-letter headline. For a full screen it means thousands of elements re-rendering every few frames, which is exactly how you get a page that stutters.</p>
+<p>So the full-page board is a single canvas. Each cell is just a few numbers: the card it shows, the card it is heading for, and when its current flip began.</p>
+<h2>Draw only what moves</h2>
+<p>Every frame, the engine walks the cells and redraws only the ones that are mid-flip. A flip is two halves: the top of the old card folding down towards the hinge, then the bottom of the new card dropping into place, each squashed toward the split line and shaded as it turns. When nothing is moving, nothing is drawn.</p>
+<p>A full page change - every cell on screen moving - runs at a steady sixty frames per second.</p>
+<h2>The words are still real</h2>
+<p>A canvas is a picture, and a picture is useless to a screen reader. So every page is also written out as ordinary text in the document, visually hidden, with real links you can reach with the tab key. The board is what you see; the text underneath is what the page actually says.</p>
+  </article>
+  <div class="foot"><a href="../forward-only/">&larr; Forward only</a><a href="../this-blog-is-a-board/">This blog is a board &rarr;</a></div>
+</div>
+</body>
+</html>

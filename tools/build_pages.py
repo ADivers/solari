@@ -8,7 +8,8 @@
 
 Run from the repo root:  python3 tools/build_pages.py
 """
-import json, re, shutil, html
+import json, re, shutil, html, sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -111,10 +112,11 @@ def build():
     shutil.copytree(ROOT / "vendor", OUT / "vendor")
     (OUT / ".nojekyll").write_text("")
     # Experiments: standalone pages copied as-is (they link ../tokens.css).
-    for exp in sorted((ROOT / "experiments").glob("*/index.html")):
-        dest = OUT / exp.parent.name / "index.html"
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(exp, dest)
+    for exp in sorted(p for p in (ROOT / "experiments").iterdir() if p.is_dir()):
+        shutil.copytree(exp, OUT / exp.name)
+    # The board blog (docs/blog/): app, posts.json, RSS feed, text versions.
+    import build_blog
+    build_blog.build(OUT)
 
     pages = []
     for prev in sorted((ROOT / "components").glob("*/preview.html")):
@@ -131,7 +133,7 @@ def build():
     # The website theme is the site's front page.
     home = (ROOT / "components" / "Homepage" / "preview.html").read_text()
     home = home.replace("'© 2026 SOLARI. Set in Barlow Condensed and your system font.'",
-                        "'© 2026 SOLARI · ', h('a', { href: 'system/' }, 'Design system'), ' · ', h('a', { href: 'board/' }, 'The whole page is a board'), ' · ', h('a', { href: 'https://github.com/ADivers/solari' }, 'Source on GitHub')")
+                        "'© 2026 SOLARI · ', h('a', { href: 'system/' }, 'Design system'), ' · ', h('a', { href: 'board/' }, 'The whole page is a board'), ' · ', h('a', { href: 'blog/' }, 'Journal'), ' · ', h('a', { href: 'https://github.com/ADivers/solari' }, 'Source on GitHub')")
     home = home.replace("<title>SOLARI — website theme</title>", "<title>SOLARI — a Solari board website theme</title>\n<meta name=\"description\" content=\"SOLARI: a split-flap departures-board website theme and design system.\">")
     (OUT / "index.html").write_text(standalone(home, "", THEME_BUTTON))
 
@@ -196,6 +198,7 @@ def build():
   ReactDOM.createRoot(document.getElementById('ctas')).render(h(React.Fragment, null,
     h(S.Button, {{ href: '../', arrow: true }}, 'See the website theme'),
     h(S.Button, {{ variant: 'secondary', href: '../board/' }}, 'Experiment: the whole page is a board'),
+    h(S.Button, {{ variant: 'secondary', href: '../blog/' }}, 'The board blog'),
     h(S.Button, {{ variant: 'secondary', href: 'https://github.com/ADivers/solari' }}, 'View source')));
 </script>
 </body>
