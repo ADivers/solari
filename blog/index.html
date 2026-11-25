@@ -106,25 +106,24 @@
     }
     var dr = g.line("DEPARTURES", "y");
     if (cols >= 30) g.put(dr, cols - 9, "PARTENZE", "m");
-    if (cols >= 30) {
+    var L = live(), A = arriving();
+    // Two-line entries whenever any title would be cut off at this width.
+    var narrow = cols < 30 || L.concat(A).some(function (p) { return clean(p.title).length > titleW; });
+    if (!narrow) {
       var hr = g.blank(), x = g.put(hr, 0, "DATE  ", "m"); g.put(hr, x + 1, "TITLE", "m");
       if (showMin) g.put(hr, cols - statusW - 1 - minW, "MIN", "m");
     }
-    // Narrow boards: two-line entries (date + status, then the full title) instead of truncating.
-    var narrow = cols < 30;
     function entry(date, title, min, status, sc, go, tc) {
       if (!narrow) return row(date, title, min, status, sc, go, tc);
-      var r0 = g.blank(); g.put(r0, 0, date + (min ? "  " + min + " MIN" : ""), "m"); g.put(r0, cols - statusW, pad(status, statusW), sc);
+      var r0 = g.blank(); g.put(r0, 0, date + (min ? "  " + min + " MIN" : ""), "w"); g.put(r0, cols - statusW, pad(status, statusW), sc);
       var tl = wrap(title, cols).slice(0, 2), r1 = r0;
       tl.forEach(function (t) { r1 = g.line(t, tc || "w"); });
       if (go) for (var k = r0; k <= r1; k++) g.links.push({ row: k, c0: 0, c1: cols - 1, go: go });
     }
-    var L = live();
     L.forEach(function (p) {
       var read = isRead(p.slug);
       entry(dd(p.date), clean(p.title), String(p.minutes), read ? "READ" : "NEW", read ? "m" : "Y", "#/post/" + p.slug + "/1");
     });
-    var A = arriving();
     if (A.length) {
       g.blank(); g.line("ARRIVALS", "y");
       A.forEach(function (p) { entry(dd(p.date), clean(p.title), "", "DUE", "m", null, "m"); });
