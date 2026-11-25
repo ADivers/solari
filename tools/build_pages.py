@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "docs"
+OUT = Path(os.environ.get("SOLARI_OUT", ROOT / "_site"))
 REACT = ["vendor/react.production.min.js", "vendor/react-dom.production.min.js"]  # React 18.3.1, vendored
 FIRST, SECOND = "station", "daylight"
 
@@ -42,8 +42,12 @@ def tokens_css():
             continue
         for tok in fam.get("tokens", []):
             shared.append(f"  --{tok['name']}: {tok['value']};")
+    faces = ""
+    for f in t["type"].get("fonts", []):
+        faces += (f"@font-face {{ font-family: \"{f['family']}\"; src: url(\"{f['file']}\") format(\"woff2\"); "
+                  f"font-weight: {f.get('weight', '400')}; font-style: {f.get('style', 'normal')}; font-display: swap; }}\n")
     return (
-        "/* SOLARI — generated from tokens.json by tools/build_pages.py. Do not edit. */\n"
+        "/* SOLARI — generated from tokens.json by tools/build_pages.py. Do not edit. */\n" + faces +
         f":root, [data-theme=\"{FIRST}\"] {{\n  color-scheme: dark;\n" + "\n".join(first) + "\n}\n"
         f"[data-theme=\"{SECOND}\"] {{\n  color-scheme: light;\n" + "\n".join(second) + "\n}\n"
         ":root {\n" + "\n".join(shared) + "\n}\n"
@@ -54,6 +58,7 @@ ICON = "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox
 
 HEAD = """<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="{icon}">
+<link rel="preload" href="{up}fonts/BarlowCondensed-SemiBold-subset.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="{up}tokens.css">
 <link rel="stylesheet" href="{up}components/bundle.css">
 <script src="{up}{r0}"></script>
@@ -95,6 +100,7 @@ def card_meta(src):
 
 def standalone(src, up, extra_body=""):
     src = re.sub(r"^\s*<!--\s*@dsCard.*?-->\s*", "", src, flags=re.S)
+    src = src.replace("<html>", '<html lang="en">', 1)
     src = src.replace("</title>", "</title>\n" + head(up), 1)
     if extra_body:
         src = src.replace("</body>", extra_body + "</body>", 1)
@@ -110,13 +116,23 @@ def build():
         shutil.copy(ROOT / "components" / f, OUT / "components" / f)
     shutil.copy(ROOT / "tokens.json", OUT / "tokens.json")
     shutil.copytree(ROOT / "vendor", OUT / "vendor")
+    shutil.copytree(ROOT / "fonts", OUT / "fonts")
     (OUT / ".nojekyll").write_text("")
     # Experiments: standalone pages copied as-is (they link ../tokens.css).
     for exp in sorted(p for p in (ROOT / "experiments").iterdir() if p.is_dir()):
         shutil.copytree(exp, OUT / exp.name)
     # The board blog (docs/blog/): app, posts.json, RSS feed, text versions.
     import build_blog
-    build_blog.build(OUT)
+    urls = build_blog.build(OUT)
+    # Sitemap for the whole project site.
+    site = "https://adivers.github.io/solari/"
+    urls = [(site, None), (site + "system/", None), (site + "board/", None)] + urls
+    sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for u, d in urls:
+        sm.append(f"  <url><loc>{u}</loc>" + (f"<lastmod>{d}</lastmod>" if d else "") + "</url>")
+    sm.append("</urlset>")
+    (OUT / "sitemap.xml").write_text("\n".join(sm) + "\n")
+    # (robots.txt only counts at the host root, adivers.github.io/robots.txt — submit the sitemap in Search Console instead.)
 
     pages = []
     for prev in sorted((ROOT / "components").glob("*/preview.html")):
@@ -134,7 +150,7 @@ def build():
     home = (ROOT / "components" / "Homepage" / "preview.html").read_text()
     home = home.replace("'© 2026 SOLARI. Set in Barlow Condensed and your system font.'",
                         "'© 2026 SOLARI · ', h('a', { href: 'system/' }, 'Design system'), ' · ', h('a', { href: 'board/' }, 'The whole page is a board'), ' · ', h('a', { href: 'blog/' }, 'Journal'), ' · ', h('a', { href: 'https://github.com/ADivers/solari' }, 'Source on GitHub')")
-    home = home.replace("<title>SOLARI — website theme</title>", "<title>SOLARI — a Solari board website theme</title>\n<meta name=\"description\" content=\"SOLARI: a split-flap departures-board website theme and design system.\">")
+    home = home.replace("<title>SOLARI — website theme</title>", "<title>SOLARI — a Solari board website theme</title>\n<meta name=\"description\" content=\"SOLARI: a split-flap departures-board website theme and design system.\">\n<link rel=\"canonical\" href=\"https://adivers.github.io/solari/\">\n<meta property=\"og:title\" content=\"SOLARI — a Solari board website theme\">\n<meta property=\"og:description\" content=\"A split-flap departures-board website theme and design system.\">\n<meta property=\"og:url\" content=\"https://adivers.github.io/solari/\">\n<meta property=\"og:type\" content=\"website\">")
     (OUT / "index.html").write_text(standalone(home, "", THEME_BUTTON))
 
     order = ["SplitFlap", "DepartureBoard", "Clock", "Button", "NavBar", "Panel", "StatusFlap", "Homepage"]
@@ -158,6 +174,7 @@ def build():
 <meta charset="utf-8">
 <title>SOLARI — design system</title>
 <meta name="description" content="SOLARI: a split-flap departures-board design system — tokens, components and a website theme.">
+<link rel="canonical" href="https://adivers.github.io/solari/system/">
 {head('../')}<style>
   body{{margin:0}}
   .pg{{max-width:1104px;margin:0 auto;padding:0 var(--space-6)}}

@@ -49,35 +49,46 @@
     return SIZES[size || "md"] || size;
   }
 
-  /* One flap unit. Steps through the drum toward `ch`, one flip per `speed` ms. */
+  /* One flap unit. React renders it once; each step then updates the DOM directly and turns the
+     flap with the Web Animations API, so a board of hundreds of cells costs no React re-renders. */
   function Cell(props) {
     var target = norm(props.ch);
-    var s1 = useState(props.boot ? " " : target), cur = s1[0], setCur = s1[1];
-    var s2 = useState(null), flip = s2[0], setFlip = s2[1];
-    var moving = useRef(false), n = useRef(0);
-
+    var root = useRef(null), st = useRef(null);
+    if (!st.current) st.current = { cur: props.boot ? " " : target, timer: 0, moving: false };
+    function parts() { var k = root.current.children; return { top: k[0].firstChild, bot: k[1].firstChild, fold: k[2], foldT: k[2].firstChild, drop: k[3], dropT: k[3].firstChild }; }
+    (useLayoutEffect || useEffect)(function () {
+      var p = parts(); p.top.textContent = p.bot.textContent = st.current.cur;
+      return function () { clearTimeout(st.current.timer); };
+    }, []);
     useEffect(function () {
-      if (cur === target) { moving.current = false; return; }
-      if (reducedMotion()) { setFlip(null); setCur(target); return; }
-      var t = setTimeout(function () {
-        moving.current = true;
-        var next = DRUM.charAt((DRUM.indexOf(cur) + 1) % DRUM.length);
-        n.current += 1;
-        setFlip({ from: cur, to: next, n: n.current });
-        setCur(next);
-      }, moving.current ? props.speed : (props.delay || 0));
-      return function () { clearTimeout(t); };
-    }, [cur, target]);
-
-    var kids = [
-      h("span", { key: "t", className: "sl-hf sl-top" }, h("span", null, cur)),
-      h("span", { key: "b", className: "sl-hf sl-bot" }, h("span", null, flip ? flip.from : cur))
-    ];
-    if (flip) {
-      kids.push(h("span", { key: "f" + flip.n, className: "sl-hf sl-top sl-fold" }, h("span", null, flip.from)));
-      kids.push(h("span", { key: "d" + flip.n, className: "sl-hf sl-bot sl-drop" }, h("span", null, flip.to)));
-    }
-    return h("span", { className: cx("sl-cell", props.color === "yellow" && "sl-c-yellow"), "aria-hidden": "true" }, kids);
+      var s = st.current, p = parts();
+      clearTimeout(s.timer);
+      if (s.cur === target) return;
+      if (reducedMotion() || !p.fold.animate) { s.cur = target; p.top.textContent = p.bot.textContent = target; return; }
+      var half = props.speed / 2;
+      function step() {
+        if (s.cur === target) {                      // landed
+          s.moving = false; p.bot.textContent = s.cur;
+          p.fold.style.visibility = p.drop.style.visibility = "hidden";
+          return;
+        }
+        var from = s.cur, next = DRUM.charAt((DRUM.indexOf(from) + 1) % DRUM.length);
+        s.cur = next;
+        p.top.textContent = next; p.bot.textContent = from;
+        p.foldT.textContent = from; p.dropT.textContent = next;
+        p.fold.style.visibility = p.drop.style.visibility = "visible";
+        p.fold.animate([{ transform: "rotateX(0deg)" }, { transform: "rotateX(-90deg)" }], { duration: half, easing: "ease-in", fill: "forwards" });
+        p.drop.animate([{ transform: "rotateX(90deg)" }, { transform: "rotateX(0deg)" }], { duration: half, delay: half, easing: "ease-out", fill: "both" });
+        s.timer = setTimeout(step, props.speed);
+      }
+      s.timer = setTimeout(step, s.moving ? props.speed : (props.delay || 0));
+      s.moving = true;
+    }, [target]);
+    return h("span", { ref: root, className: cx("sl-cell", props.color === "yellow" && "sl-c-yellow"), "aria-hidden": "true" },
+      h("span", { className: "sl-hf sl-top" }, h("span")),
+      h("span", { className: "sl-hf sl-bot" }, h("span")),
+      h("span", { className: "sl-hf sl-top sl-fold" }, h("span")),
+      h("span", { className: "sl-hf sl-bot sl-drop" }, h("span")));
   }
 
   function SplitFlap(props) {
@@ -189,7 +200,7 @@
   function NavBar(props) {
     var links = props.links || [];
     return h("header", { className: cx("sl-nav", props.className) },
-      h("a", { className: "sl-nav-brand", href: props.brandHref || "#", "aria-label": props.brand + " home" },
+      h("a", { className: "sl-nav-brand", href: props.brandHref || "#" },
         h(SplitFlap, { text: props.brand, size: props.brandSize || "sm", color: props.brandColor, boot: props.boot })),
       links.length ? h("nav", { "aria-label": "Primary" }, h("ul", { className: "sl-nav-links" }, links.map(function (l, i) {
         return h("li", { key: i }, h("a", { className: cx("sl-nav-link", l.active && "is-active"), href: l.href || "#", "aria-current": l.active ? "page" : null }, l.label));

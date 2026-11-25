@@ -108,55 +108,83 @@
       kick();
     }
 
-    /* drawing */
-    function font() { return "600 " + Math.round(ch * 0.9) + 'px "Barlow Condensed", "Arial Narrow", sans-serif'; }
+    /* drawing — every card face (character × colour) is painted once into a sprite sheet;
+       frames only copy halves of it, squashed toward the hinge while a flap turns. */
+    var COLORS = "wymYr", atlas = null, atlasKey = "", tw = 0, th = 0;
     function face(c) { return c === "r" ? C.alert : c === "Y" ? C.y : C.flap; }
     function ink(c) { return c === "y" ? C.y : c === "m" ? C.m : c === "Y" ? C.onY : C.w; }
     function xy(i) { var r = Math.floor(i / cols), c = i % cols; return [padX + c * (cw + gap), padY + r * (ch + gap)]; }
-    function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+    function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+    function buildAtlas() {
+      var fontOk = !document.fonts || document.fonts.check('600 20px "Barlow Condensed"');
+      var key = cw + "x" + ch + "@" + dpr + (fontOk ? "f" : "");
+      if (key === atlasKey) return;
+      atlasKey = key;
+      tw = Math.ceil(cw * dpr); th = Math.ceil(ch * dpr);
+      atlas = document.createElement("canvas");
+      atlas.width = tw * DRUM.length; atlas.height = th * COLORS.length;
+      var g = atlas.getContext("2d");
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.font = "600 " + Math.round(ch * 0.9) + 'px "Barlow Condensed", "Arial Narrow", sans-serif';
+      g.textAlign = "center"; g.textBaseline = "middle";
+      var sh = Math.max(1, Math.round(ch * 0.03)), pin = Math.max(1, cw * 0.05);
+      for (var ci = 0; ci < COLORS.length; ci++) for (var k = 0; k < DRUM.length; k++) {
+        var x = k * cw, y = ci * ch, col = COLORS[ci], chr = DRUM.charAt(k);
+        g.save(); g.beginPath(); g.rect(x, y, cw, ch); g.clip();
+        g.fillStyle = face(col); rr(g, x, y, cw, ch, Math.min(3, cw / 6)); g.fill();
+        if (chr !== " ") { g.fillStyle = ink(col); g.fillText(chr, x + cw / 2, y + ch / 2 + ch * 0.02); }
+        g.fillStyle = C.split;
+        g.fillRect(x, y + ch / 2 - sh / 2, cw, sh);
+        g.fillRect(x, y + ch / 2 - ch * 0.06, pin, ch * 0.12);
+        g.fillRect(x + cw - pin, y + ch / 2 - ch * 0.06, pin, ch * 0.12);
+        g.restore();
+      }
+    }
+    // Copy the top or bottom half of a card; k squashes it toward the hinge (1 = flat).
     function half(x, y, chr, col, top, k, shade) {
-      var mid = y + ch / 2;
-      ctx.save();
-      ctx.beginPath();
-      if (top) ctx.rect(x, y, cw, ch / 2); else ctx.rect(x, mid, cw, ch / 2);
-      ctx.clip();
-      if (k !== 1) { ctx.translate(0, mid); ctx.scale(1, k); ctx.translate(0, -mid); }
-      ctx.fillStyle = face(col); rr(x, y, cw, ch, Math.min(3, cw / 6)); ctx.fill();
-      if (chr !== " ") { ctx.fillStyle = ink(col); ctx.fillText(chr, x + cw / 2, mid + ch * 0.02); }
-      if (shade) { ctx.fillStyle = "rgba(0,0,0," + shade + ")"; ctx.fillRect(x, y, cw, ch); }
-      ctx.restore();
+      var sx = DRUM.indexOf(chr) * tw, sy = COLORS.indexOf(col) * th, hh = ch / 2, dh = hh * k;
+      if (dh <= 0.25) return;
+      var dy = top ? y + hh - dh : y + hh;
+      ctx.drawImage(atlas, sx, sy + (top ? 0 : th / 2), tw, th / 2, x, dy, cw, dh);
+      if (shade) { ctx.fillStyle = "rgba(0,0,0," + shade + ")"; ctx.fillRect(x, dy, cw, dh); }
     }
     function isHot(i) { return hover && Math.floor(i / cols) === hover.row && i % cols >= hover.c0 && i % cols <= hover.c1; }
     function hotC(c, hot) { return hot ? (c === "y" ? "w" : c === "m" ? "w" : c === "w" ? "y" : c) : c; }
     function drawCell(i, now) {
       var p = xy(i), x = p[0], y = p[1], cell = cells[i], hot = isHot(i);
-      ctx.fillStyle = C.housing; ctx.fillRect(x - gap / 2, y - gap / 2, cw + gap, ch + gap);
       var t = cell.start ? Math.min(1, (now - cell.start) / SPEED) : 1;
-      var curC = hotC(cell.curC, hot), fromC = hotC(cell.fromC, hot);
-      if (t >= 1 || !cell.start) { half(x, y, cell.cur, curC, true, 1, 0); half(x, y, cell.cur, curC, false, 1, 0); }
-      else {
-        half(x, y, cell.cur, curC, true, 1, 0);
-        half(x, y, cell.from, fromC, false, 1, 0);
-        if (t < 0.5) half(x, y, cell.from, fromC, true, Math.cos(t * Math.PI), 0.45 * t * 2);
-        else half(x, y, cell.cur, curC, false, -Math.cos(t * Math.PI), 0.35 * (1 - (t - 0.5) * 2));
+      var curC = hotC(cell.curC, hot);
+      if (t >= 1 || !cell.start) {   // at rest: one copy of the whole card
+        ctx.drawImage(atlas, DRUM.indexOf(cell.cur) * tw, COLORS.indexOf(curC) * th, tw, th, x, y, cw, ch);
+        return;
       }
-      ctx.fillStyle = C.split;
-      var sh = Math.max(1, Math.round(ch * 0.03)), pin = Math.max(1, cw * 0.05);
-      ctx.fillRect(x, y + ch / 2 - sh / 2, cw, sh);
-      ctx.fillRect(x - 1, y + ch / 2 - ch * 0.06, pin, ch * 0.12);
-      ctx.fillRect(x + cw - pin + 1, y + ch / 2 - ch * 0.06, pin, ch * 0.12);
+      var fromC = hotC(cell.fromC, hot);
+      ctx.fillStyle = C.housing; ctx.fillRect(x, y, cw, ch);
+      half(x, y, cell.cur, curC, true, 1, 0);       // next card, top half (revealed behind the falling flap)
+      half(x, y, cell.from, fromC, false, 1, 0);    // previous card, bottom half
+      if (t < 0.5) half(x, y, cell.from, fromC, true, Math.cos(t * Math.PI), 0.45 * t * 2);
+      else half(x, y, cell.cur, curC, false, -Math.cos(t * Math.PI), 0.35 * (1 - (t - 0.5) * 2));
+      ctx.fillStyle = C.split; ctx.fillRect(x, y + ch / 2 - Math.max(1, Math.round(ch * 0.03)) / 2, cw, Math.max(1, Math.round(ch * 0.03)));
     }
-    function prep() { ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.font = font(); ctx.textAlign = "center"; ctx.textBaseline = "middle"; }
+    function prep() { ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = true; }
     function drawAll() {
-      prep();
+      buildAtlas(); prep();
       ctx.fillStyle = C.housing; ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
       var now = performance.now();
       for (var i = 0; i < cells.length; i++) drawCell(i, now);
     }
+    if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", function () { if (cells.length) drawAll(); });
 
     /* engine: each moving cell steps one card per SPEED ms, forward through the drum */
     function kick() { if (!raf) raf = requestAnimationFrame(frame); }
+    var stats = { frames: 0, ms: 0, worst: 0 };
     function frame(now) {
+      var t0 = performance.now();
+      frameBody(now);
+      var dt = performance.now() - t0;
+      stats.frames++; stats.ms += dt; if (dt > stats.worst) stats.worst = dt;
+    }
+    function frameBody(now) {
       raf = 0; prep();
       var busy = false;
       for (var i = 0; i < cells.length; i++) {
@@ -185,7 +213,7 @@
       for (var i = 0; i < links.length; i++) { var l = links[i]; if (l.row === r && c >= l.c0 && c <= l.c1) return l; }
       return null;
     }
-    function redrawLink(l) { if (!l) return; prep(); var now = performance.now(); for (var c = l.c0; c <= l.c1; c++) drawCell(l.row * cols + c, now); }
+    function redrawLink(l) { if (!l || !atlas) return; prep(); var now = performance.now(); for (var c = l.c0; c <= l.c1; c++) drawCell(l.row * cols + c, now); }
     canvas.addEventListener("mousemove", function (ev) {
       var l = linkAt(ev);
       if (l !== hover) { var old = hover; hover = l; redrawLink(old); redrawLink(l); canvas.style.cursor = l ? "pointer" : "default"; }
@@ -201,6 +229,8 @@
       size: function () { return [cols, rows, fitRows]; },
       cells: function () { return cells; },
       links: function () { return links; },
+      stats: function () { return stats; },
+      rect: function (r, c) { return [padX + c * (cw + gap), padY + r * (ch + gap), cw, ch]; },   // CSS px, for tests and overlays
       landed: function () { return cells.every(function (c) { return c.cur === c.tgt && c.curC === c.tgtC; }); }
     };
   }
