@@ -110,6 +110,11 @@ def build():
     shutil.copy(ROOT / "tokens.json", OUT / "tokens.json")
     shutil.copytree(ROOT / "vendor", OUT / "vendor")
     (OUT / ".nojekyll").write_text("")
+    # Experiments: standalone pages copied as-is (they link ../tokens.css).
+    for exp in sorted((ROOT / "experiments").glob("*/index.html")):
+        dest = OUT / exp.parent.name / "index.html"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(exp, dest)
 
     pages = []
     for prev in sorted((ROOT / "components").glob("*/preview.html")):
@@ -126,7 +131,7 @@ def build():
     # The website theme is the site's front page.
     home = (ROOT / "components" / "Homepage" / "preview.html").read_text()
     home = home.replace("'© 2026 SOLARI. Set in Barlow Condensed and your system font.'",
-                        "'© 2026 SOLARI · ', h('a', { href: 'system/' }, 'Design system'), ' · ', h('a', { href: 'https://github.com/ADivers/solari' }, 'Source on GitHub')")
+                        "'© 2026 SOLARI · ', h('a', { href: 'system/' }, 'Design system'), ' · ', h('a', { href: 'board/' }, 'The whole page is a board'), ' · ', h('a', { href: 'https://github.com/ADivers/solari' }, 'Source on GitHub')")
     home = home.replace("<title>SOLARI — website theme</title>", "<title>SOLARI — a Solari board website theme</title>\n<meta name=\"description\" content=\"SOLARI: a split-flap departures-board website theme and design system.\">")
     (OUT / "index.html").write_text(standalone(home, "", THEME_BUTTON))
 
@@ -190,6 +195,7 @@ def build():
   ReactDOM.createRoot(document.getElementById('board')).render(h(S.SplitFlap, {{ messages: ['DESIGN SYSTEM', 'SPLIT FLAP', 'ON TIME'], length: 13, fit: true, maxHeight: 80, color: 'yellow', label: 'SOLARI design system' }}));
   ReactDOM.createRoot(document.getElementById('ctas')).render(h(React.Fragment, null,
     h(S.Button, {{ href: '../', arrow: true }}, 'See the website theme'),
+    h(S.Button, {{ variant: 'secondary', href: '../board/' }}, 'Experiment: the whole page is a board'),
     h(S.Button, {{ variant: 'secondary', href: 'https://github.com/ADivers/solari' }}, 'View source')));
 </script>
 </body>

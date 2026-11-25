@@ -96,8 +96,10 @@ SOLARI is a website system modelled on the split-flap departures board — the c
 | `components/index.d.ts` | TypeScript declarations |
 | `components/<Name>/` | Each component's guidelines and preview; `Homepage/` is the website theme |
 | `tools/build_pages.py` | Builds the GitHub Pages site into `docs/` — rerun after changing anything above |
+| `experiments/board/` | The full-page board experiment: the entire site is one split-flap board drawn on a single canvas |
 | `docs/` | The published site: the theme at the root, the component gallery at `/system/` |
 | `vendor/` | React 18.3.1 UMD builds used by the site (MIT) |
 
 - Live theme: https://adivers.github.io/solari/
 - Component gallery: https://adivers.github.io/solari/system/
+- Experiment — the whole page is one board: https://adivers.github.io/solari/board/ (source: `experiments/board/index.html`; one canvas, no React)
