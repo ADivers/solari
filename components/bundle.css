@@ -31,14 +31,14 @@
 .sl-dep-title{display:flex;justify-content:space-between;align-items:center;gap:var(--space-4);margin-bottom:var(--space-3);font-family:var(--font-mono);font-size:12px;line-height:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--board-muted)}
 
 /* Button ------------------------------------------------------------------ */
-.sl-btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);height:44px;padding:0 var(--space-4);border:1px solid transparent;border-radius:var(--radius-sm);font:600 15px/20px var(--font-sans);letter-spacing:.01em;text-decoration:none;cursor:pointer;white-space:nowrap;transition:background-color 120ms linear,color 120ms linear,border-color 120ms linear}
+.sl-btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:44px;max-width:100%;padding:var(--space-2) var(--space-4);text-align:center;border:1px solid transparent;border-radius:var(--radius-sm);font:600 15px/20px var(--font-sans);letter-spacing:.01em;text-decoration:none;cursor:pointer;transition:background-color 120ms linear,color 120ms linear,border-color 120ms linear}
 .sl-btn--primary{background:var(--solari-yellow);color:var(--on-yellow)}
 .sl-btn--primary:hover{background:var(--ink);color:var(--surface-000)}
 .sl-btn--secondary{background:transparent;color:var(--ink);border-color:var(--line-strong)}
 .sl-btn--secondary:hover{border-color:var(--ink)}
 .sl-btn--ghost{background:transparent;color:var(--ink)}
 .sl-btn--ghost:hover{background:var(--surface-200)}
-.sl-btn--sm{height:36px;padding:0 var(--space-3);font-size:14px}
+.sl-btn--sm{min-height:36px;padding:var(--space-1) var(--space-3);font-size:14px}
 .sl-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .sl-btn:disabled,.sl-btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed;pointer-events:none}
 .sl-btn-arrow{font-family:var(--font-flap);font-size:18px;line-height:1}

@@ -68,6 +68,20 @@ async def main():
         check(await pg.locator('script[type="application/ld+json"]').count() == 1, "post has structured data")
         await ctx.close()
 
+        print("small phone 320x640: no page scrolls sideways, even with wide fallback fonts")
+        ctx = await browser.new_context(viewport={"width": 320, "height": 640})
+        pg = await ctx.new_page()
+        for path in ("", "system/", "components/Button/", "components/NavBar/", "components/Homepage/", "blog/?text", "blog/posts/forward-only/?text"):
+            await pg.goto(base + path)
+            await pg.add_style_tag(content=":root{--font-sans:'DejaVu Sans',Verdana,sans-serif!important;--font-mono:'DejaVu Sans Mono',monospace!important}")
+            await pg.wait_for_timeout(600)
+            wide = await pg.evaluate("""document.documentElement.scrollWidth <= innerWidth ? '' :
+              [...document.querySelectorAll('body *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1)
+                .slice(0, 3).map(e => e.tagName.toLowerCase() + '.' + (e.className || '')).join(', ')""")
+            check(not wide, f"/{path} fits 320px" + (f" (too wide: {wide})" if wide else ""))
+        await pg.evaluate("localStorage.clear()")
+        await ctx.close()
+
         for name, (w, h) in VIEWPORTS.items():
             print(f"{name} {w}x{h}")
             ctx = await browser.new_context(viewport={"width": w, "height": h})
@@ -80,7 +94,10 @@ async def main():
             for path in ("", "system/", "components/SplitFlap/", "components/DepartureBoard/", "components/Homepage/"):
                 await pg.goto(base + path)
                 await pg.wait_for_timeout(800)
-                check(await pg.evaluate("document.documentElement.scrollWidth <= innerWidth"), f"/{path} has no sideways scroll")
+                wide = await pg.evaluate("""document.documentElement.scrollWidth <= innerWidth ? '' :
+                  [...document.querySelectorAll('body *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1)
+                    .slice(0, 3).map(e => e.tagName.toLowerCase() + '.' + (e.className || '') + ' "' + (e.textContent || '').trim().slice(0, 30) + '"').join(', ')""")
+                check(not wide, f"/{path} has no sideways scroll" + (f" (too wide: {wide})" if wide else ""))
 
             # Board experiment lands every flap on its target.
             await pg.goto(base + "board/")

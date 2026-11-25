@@ -181,7 +181,7 @@ def build():
   .hero{{padding:var(--space-8) 0 var(--space-12)}}
   .hero p{{font-size:18px;line-height:28px;color:var(--ink-muted);max-width:60ch;margin:var(--space-6) 0}}
   .ctas{{display:flex;gap:var(--space-3);flex-wrap:wrap}}
-  .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--space-6);padding-bottom:var(--space-16)}}
+  .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:var(--space-6);padding-bottom:var(--space-16)}}
   .card{{background:var(--surface-100);border:1px solid var(--line);border-radius:var(--radius-sm);padding:var(--space-6);min-width:0}}
   .card.wide{{grid-column:1/-1}}
   .card-head{{display:flex;justify-content:space-between;gap:var(--space-4)}}
@@ -214,7 +214,7 @@ def build():
   ReactDOM.createRoot(document.getElementById('board')).render(h(S.SplitFlap, {{ messages: ['DESIGN SYSTEM', 'SPLIT FLAP', 'ON TIME'], length: 13, fit: true, maxHeight: 80, color: 'yellow', label: 'SOLARI design system' }}));
   ReactDOM.createRoot(document.getElementById('ctas')).render(h(React.Fragment, null,
     h(S.Button, {{ href: '../', arrow: true }}, 'See the website theme'),
-    h(S.Button, {{ variant: 'secondary', href: '../board/' }}, 'Experiment: the whole page is a board'),
+    h(S.Button, {{ variant: 'secondary', href: '../board/' }}, 'The whole page is a board'),
     h(S.Button, {{ variant: 'secondary', href: '../blog/' }}, 'The board blog'),
     h(S.Button, {{ variant: 'secondary', href: 'https://github.com/ADivers/solari' }}, 'View source')));
 </script>
