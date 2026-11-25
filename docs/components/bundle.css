@@ -10,7 +10,7 @@
 .sl-board.sl-yellow{--sl-ink:var(--flap-yellow)}
 .sl-board.sl-bare{padding:0;background:transparent}
 .sl-board.sl-fit{display:flex;width:100%}
-.sl-cell{position:relative;flex:none;width:calc(var(--sl-h) * .66);height:var(--sl-h);font-family:var(--font-flap);font-weight:600;font-size:calc(var(--sl-h) * .8);letter-spacing:0;color:var(--sl-ink);perspective:calc(var(--sl-h) * 5);border-radius:var(--radius-flap)}
+.sl-cell{position:relative;flex:none;width:calc(var(--sl-h) * .66);height:var(--sl-h);font-family:var(--font-flap);font-weight:600;font-size:calc(var(--sl-h) * .94);letter-spacing:0;color:var(--sl-ink);perspective:calc(var(--sl-h) * 5);border-radius:var(--radius-flap)}
 .sl-cell::after{content:"";position:absolute;left:0;right:0;top:50%;height:max(1px,calc(var(--sl-h) * .035));transform:translateY(-50%);background:var(--flap-split);z-index:4}
 .sl-cell::before{content:"";position:absolute;top:50%;left:-1px;right:-1px;height:calc(var(--sl-h) * .14);transform:translateY(-50%);border-left:max(1px,calc(var(--sl-h) * .04)) solid var(--flap-split);border-right:max(1px,calc(var(--sl-h) * .04)) solid var(--flap-split);z-index:5}
 .sl-hf{position:absolute;left:0;right:0;height:50%;overflow:hidden;background:var(--flap)}

@@ -40,7 +40,7 @@ SOLARI is a website system modelled on the split-flap departures board — the c
 
 - A full-width hero uses `fit` (cells scale to the column, capped by `maxHeight`); everything else uses a size step: `flap-sm` 24px (nav, phones), `flap-md` 36px (rows, clocks, stats), `flap-lg` 56px (a fixed hero).
 - Give every SplitFlap a `length` that fits its longest message so the board never resizes.
-- Cycling boards hold each message at least 3.5 seconds (`interval` 4000 default). Flips run 70ms each with a 35ms stagger per cell, left to right.
+- Cycling boards hold each message for `interval` ms (default 3500) **after** its flaps land, so it is always readable however far the drum has to travel. Flips run 70ms each with a 35ms stagger per cell, left to right.
 - DepartureBoard columns are measured in cells. Typical: Time 5, Destination 10–12, Via 8, Plat 2 (right-aligned), Remarks 8. On phones drop Via and step the size down to 16px so the board fits without scrolling.
 - Update a row by changing its data; only the cells whose characters change will move.
 

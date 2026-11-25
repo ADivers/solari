@@ -1,14 +1,34 @@
 {
   "v": 3,
   "layout": "files",
-  "createdOnFiles": { "v": 1, "at": "2026-11-25T14:44:59Z" },
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-25T14:44:59Z"
+  },
   "title": "SOLARI",
   "namespace": "Solari",
-  "libraries": [ { "name": "react", "version": "18" }, { "name": "react-dom", "version": "18" } ],
+  "libraries": [
+    {
+      "name": "react",
+      "version": "18"
+    },
+    {
+      "name": "react-dom",
+      "version": "18"
+    }
+  ],
   "sections": {},
   "groups": [],
   "assetGroups": {},
   "blobs": {},
-  "docs": { "readme": "project/README.md", "sections": [] },
-  "lastChange": { "by": "Alex Divers", "at": "2026-11-25T14:44:59Z", "via": "Claude", "note": "Created SOLARI: split-flap tokens, seven components and the Solari board website theme." }
+  "docs": {
+    "readme": "project/README.md",
+    "sections": []
+  },
+  "lastChange": {
+    "by": "Alex Divers",
+    "at": "2026-11-25T14:48:57Z",
+    "via": "Claude",
+    "note": "Cycling boards now hold each message after landing; larger flap glyphs."
+  }
 }

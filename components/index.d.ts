@@ -8,7 +8,7 @@ export interface SplitFlapProps {
   text?: string;
   /** Several messages; the board flips to the next every `interval` ms. Overrides `text`. */
   messages?: string[];
-  /** Milliseconds each message stays up when cycling. Default 4000. */
+  /** Milliseconds each message holds once its flaps have landed, when cycling. Default 3500. */
   interval?: number;
   /** Number of flap cells. Default: the longest message. Longer text is cut off. */
   length?: number;

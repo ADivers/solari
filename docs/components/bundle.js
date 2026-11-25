@@ -32,6 +32,18 @@
     }
     return s + new Array(gap + 1).join(" ");
   }
+  /* How long a board takes to go from one string to another, in ms. */
+  function travel(from, to, speed, stagger) {
+    if (reducedMotion()) return 0;
+    var worst = 0, n = DRUM.length;
+    for (var i = 0; i < to.length; i++) {
+      var a = DRUM.indexOf(norm(from.charAt(i))), b = DRUM.indexOf(norm(to.charAt(i)));
+      var steps = (b - a + n) % n;
+      if (steps) worst = Math.max(worst, i * stagger + steps * speed);
+    }
+    return worst;
+  }
+
   function sizeValue(size) {
     if (typeof size === "number") return size + "px";
     return SIZES[size || "md"] || size;
@@ -73,17 +85,22 @@
     var longest = 0;
     for (var i = 0; i < messages.length; i++) longest = Math.max(longest, String(messages[i]).length);
     var length = props.length || longest || 1;
-    var interval = props.interval || 4000;
+    var interval = props.interval || 3500; // hold time once the board has landed
     var speed = props.speed || 70;
     var stagger = props.stagger == null ? 35 : props.stagger;
     var boot = props.boot !== false;
 
     var s = useState(0), idx = s[0], setIdx = s[1];
+    var prevShown = useRef(boot ? pad("", length, props.align) : null);
+    var shownNow = pad(messages[idx % messages.length], length, props.align);
     useEffect(function () {
+      // Hold each message for `interval` ms AFTER its flaps have landed.
+      var from = prevShown.current == null ? shownNow : prevShown.current;
+      prevShown.current = shownNow;
       if (messages.length < 2) return;
-      var t = setInterval(function () { setIdx(function (x) { return (x + 1) % messages.length; }); }, interval);
-      return function () { clearInterval(t); };
-    }, [messages.length, interval]);
+      var t = setTimeout(function () { setIdx(function (x) { return (x + 1) % messages.length; }); }, travel(from, shownNow, speed, stagger) + interval);
+      return function () { clearTimeout(t); };
+    }, [idx, messages.length, interval]);
 
     var ref = useRef(null);
     var s2 = useState(null), fitH = s2[0], setFitH = s2[1];
