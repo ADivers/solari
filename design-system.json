@@ -1,12 +1,23 @@
 {
   "v": 3,
-  "layout": "files",
+  "assetGroups": {},
+  "blobs": {},
   "createdOnFiles": {
-    "v": 1,
-    "at": "2026-11-25T14:44:59Z"
+    "at": "2026-11-25T14:44:59Z",
+    "v": 1
   },
-  "title": "SOLARI",
-  "namespace": "Solari",
+  "docs": {
+    "readme": "project/README.md",
+    "sections": []
+  },
+  "groups": [],
+  "lastChange": {
+    "by": "Alex Divers",
+    "at": "2026-11-25T17:13:03Z",
+    "via": "Claude",
+    "note": "Self-hosted Barlow Condensed subset; flap cells animate without React re-renders; buttons wrap on narrow screens."
+  },
+  "layout": "files",
   "libraries": [
     {
       "name": "react",
@@ -17,18 +28,7 @@
       "version": "18"
     }
   ],
+  "namespace": "Solari",
   "sections": {},
-  "groups": [],
-  "assetGroups": {},
-  "blobs": {},
-  "docs": {
-    "readme": "project/README.md",
-    "sections": []
-  },
-  "lastChange": {
-    "by": "Alex Divers",
-    "at": "2026-11-25T14:48:57Z",
-    "via": "Claude",
-    "note": "Cycling boards now hold each message after landing; larger flap glyphs."
-  }
+  "title": "SOLARI"
 }

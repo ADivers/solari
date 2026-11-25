@@ -6,4 +6,4 @@ Give it `text` or a list of `messages` to cycle (each held for `interval` ms aft
 - One cycling board per viewport.
 - Renders its message once as screen-reader text; the cells are `aria-hidden`. Pass `live` if a change should be announced.
 - Respects `prefers-reduced-motion` by landing instantly.
-- Needs `--font-flap` (Barlow Condensed) loaded; bundle.css imports it from Google Fonts.
+- Needs `--font-flap` (Barlow Condensed) loaded; the system ships it as a font file listed in tokens.json.

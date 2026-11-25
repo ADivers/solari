@@ -32,7 +32,7 @@ SOLARI is a website system modelled on the split-flap departures board — the c
 
 ## Type
 
-- **Barlow Condensed 600** (`--font-flap`, Google Fonts; falls back to Arial Narrow) is the flap face — a narrow grotesque in the spirit of the Helvetica-cut cards on real boards. It appears only on flaps and StatusFlaps.
+- **Barlow Condensed 600** (`--font-flap`, self-hosted: `fonts/BarlowCondensed-SemiBold-subset.woff2`, subset to the drum characters, SIL OFL; falls back to Arial Narrow) is the flap face — a narrow grotesque in the spirit of the Helvetica-cut cards on real boards. It appears only on flaps and StatusFlaps.
 - `--font-sans` (system stack) for everything people read: `h1` 44/48, `h2` 28/32, `h3` 20/28, `lede` 18/28 in `ink-muted`, `body` 16/24.
 - `--font-mono` for labels, column headers and data captions (`label` 12/16, +0.1em, uppercase).
 
